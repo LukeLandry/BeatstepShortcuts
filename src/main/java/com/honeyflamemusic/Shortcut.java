@@ -3,7 +3,6 @@ package com.honeyflamemusic;
 import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.controller.api.*;
 
-import javax.sound.midi.MidiMessage;
 import java.util.UUID;
 
 public class Shortcut {
@@ -21,19 +20,32 @@ public class Shortcut {
     private CursorTrack cursorTrack;
     private ControllerHost host;
 
-    private PopupBrowser popupBrowser;
-    private BrowserResultsItemBank browserResultItemBank;
 
-
-    public Shortcut(ControllerHost host, String deviceId, String deviceType, int midiChannel, int noteNumber) {
-        init(host, deviceId, deviceType, midiChannel, noteNumber);
+    public Shortcut(ControllerHost host, String deviceId, int midiChannel, int noteNumber) {
+        init(host, deviceId, midiChannel, noteNumber);
     }
 
 
-    private void init(ControllerHost host, String deviceId, String deviceType, int midiChannel, int noteNumber) {
+    private void init(ControllerHost host, String deviceId, int midiChannel, int noteNumber) {
         this.host = host;
-        this.deviceId = deviceId;
-        this.deviceType = deviceType;
+
+        if (deviceId.startsWith("VST2:")) {
+            this.deviceId = deviceId.substring(5).trim();
+            deviceType = VST2_DEVICE;
+        } else if (deviceId.startsWith("VST3:")) {
+            this.deviceId = deviceId.substring(5).trim();
+            deviceType = VST3_DEVICE;
+        } else if (deviceId.startsWith("BITWIG:")) {
+            this.deviceId = deviceId.substring(7).trim();
+            deviceType = BITWIG_DEVICE;
+        } else if (deviceId.startsWith("CLAP:")) {
+            this.deviceId = deviceId.substring(5).trim();
+            deviceType = CLAP_DEVICE;
+        } else {
+            this.deviceId = deviceId;
+            this.deviceType = FILE;
+        }
+
         this.midiChannel = midiChannel;
         this.noteNumber = noteNumber;
 
@@ -42,7 +54,6 @@ public class Shortcut {
     }
 
     public void onMidiMsg(ShortMidiMessage msg) {
-        Model model = Model.getInstance(host);
         if (msg.getStatusByte() == 0x90 + midiChannel && msg.getData1() == noteNumber) {
             InsertionPoint ip = cursorTrack.endOfDeviceChainInsertionPoint();
             host.println("Creating new device");

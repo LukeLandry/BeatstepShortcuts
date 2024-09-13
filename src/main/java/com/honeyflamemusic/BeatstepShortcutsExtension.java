@@ -12,6 +12,8 @@ public class BeatstepShortcutsExtension extends ControllerExtension
 
    private Model model;
    private KnobsController knobsController;
+   private ShortcutPreferences shortcutPreferences;
+   private int shortcutPage = 0;
 
    private final UUID eqPlusId = UUID.fromString("e4815188-ba6f-4d14-bcfc-2dcb8f778ccb");
 
@@ -38,26 +40,27 @@ public class BeatstepShortcutsExtension extends ControllerExtension
       initializeShortcuts();
       initializeKnobs();
 
-
-      // TODO: Perform your driver initialization here.
-      // For now just show a popup notification for verification that it is running.
-      host.showPopupNotification("BeatstepShortcuts Initialized");
    }
 
    private void initializeShortcuts() {
+      shortcutPreferences = new ShortcutPreferences(getHost());
+      setShortcutPage(0);
+   }
 
-      shortcutList = Arrays.asList(
-              new Shortcut(getHost(), "e4815188-ba6f-4d14-bcfc-2dcb8f778ccb", Shortcut.BITWIG_DEVICE, 0, 16),
-              new Shortcut(getHost(), "56535437364353636C612D3736207374", Shortcut.VST3_DEVICE, 0, 17),
-              new Shortcut(getHost(), "/Users/luke/Documents/Bitwig Studio/Library/Presets/Kontakt 7/Noire.bwpreset", Shortcut.FILE, 0, 18),
-              new Shortcut(getHost(), "/Users/luke/Documents/Bitwig Studio/Library/Presets/Kontakt 7/NI Mark I.bwpreset", Shortcut.FILE, 0, 19),
-              new Shortcut(getHost(), "/Users/luke/Documents/Bitwig Studio/Library/Presets/Kontakt 7/Scarbee Rick.bwpreset", Shortcut.FILE, 0, 20),
-              new Shortcut(getHost(), "/Users/luke/Documents/Bitwig Studio/Library/Presets/Guitar Rig 6/SW Clean Tweed.bwpreset", Shortcut.FILE, 0, 21),
-              new Shortcut(getHost(), "/Users/luke/Documents/Bitwig Studio/Library/Presets/Guitar Rig 6/SW Clean Fender.bwpreset", Shortcut.FILE, 0, 22),
-              new Shortcut(getHost(), "/Users/luke/Documents/Bitwig Studio/Library/Presets/Guitar Rig 6/GR Vox.bwpreset", Shortcut.FILE, 0, 23)
-
-
-      );
+   private void setShortcutPage(int pageNumber) {
+      if (pageNumber >= 0 && pageNumber < 16) {
+         shortcutPage = pageNumber;
+         List<String> names = shortcutPreferences.getShortcutNamesForPage(shortcutPage);
+         int ccNumber = 0;
+         shortcutList = new ArrayList<>();
+         for (String name : names) {
+            if (name != null && !name.isEmpty()) {
+               shortcutList.add(new Shortcut(getHost(), name, 2, ccNumber));
+            }
+            ccNumber++;
+         }
+         getHost().showPopupNotification("Beatstep Shortcuts Page " + (shortcutPage + 1));
+      }
 
    }
 
@@ -90,6 +93,9 @@ public class BeatstepShortcutsExtension extends ControllerExtension
             Model.getInstance(getHost()).setShifted(false);
          }
       } else if (Model.getInstance(getHost()).isShifted()) {
+         if (msg.getStatusByte() == 0x92) {
+            setShortcutPage(msg.getData1());
+         }
 
       } else {
          shortcutList.forEach(s -> s.onMidiMsg(msg));
