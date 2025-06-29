@@ -84,39 +84,70 @@ public class BeatstepShortcutsExtension extends ControllerExtension
    }
 
    /** Called when we receive short MIDI message on port 0. */
-   private void onMidi0(ShortMidiMessage msg) 
-   {
-      if (msg.getData1() == Controls.SHIFT) {
-         if (msg.getStatusByte() == 0x90) {
-            Model.getInstance(getHost()).setShifted(true);
-         } else if (msg.getStatusByte() == 0x80) {
-            Model.getInstance(getHost()).setShifted(false);
+   private void onMidi0(ShortMidiMessage msg) {
+
+      final Model model = Model.getInstance(getHost());
+
+      if (msg.getChannel() == 0) {
+         // handle modifier keys
+
+         if (msg.getData1() == Controls.SHIFT) {
+            if (msg.getStatusByte() == 0x90) {
+               model.setShifted(true);
+            } else if (msg.getStatusByte() == 0x80) {
+               model.setShifted(false);
+            }
+         } else if (msg.getData1() == Controls.STOP) {
+            if (msg.getStatusByte() == 0x90) {
+               model.setStoring(true);
+            } else if (msg.getStatusByte() == 0x80) {
+               model.setStoring(false);
+            }
+         } else if (msg.getData1() == Controls.PLAY) {
+            if (msg.getStatusByte() == 0x90) {
+               getHost().println(shortcutPreferences.exportShortcutPreferencesAsJson());
+            }
          }
-      } else if (Model.getInstance(getHost()).isShifted()) {
-         if (msg.getStatusByte() == 0x92) {
+      } else if (msg.getStatusByte() == 0x92) {
+         if (model.isShifted()) {
             setShortcutPage(msg.getData1());
+         } else if (model.isStoring()) {
+            String deviceName = getCurrentDeviceName();
+//            shortcutPreferences.storeDevicePreferences(model.getShortcutPage(), msg.getData1(), deviceName);
+
+         } else {
+            shortcutList.forEach(s -> s.onMidiMsg(msg));
          }
-
-      } else {
-         shortcutList.forEach(s -> s.onMidiMsg(msg));
       }
+   }
 
+   private String getCurrentDeviceName() {
+      if (model.getCursorDevice().exists().get()) {
+
+         String presetName = model.getCursorDevice().presetName().get();
+
+         String presetCategory = model.getCursorDevice().presetCategory().get();
+         getHost().println("Current device is " + presetName + " of category " + presetCategory);
+         return presetName;
+      } else {
+         return null;
+      }
    }
 
    /** Called when we receive sysex MIDI message on port 0. */
    private void onSysex0(final String data) 
    {
-      // MMC Transport Controls:
-      if (data.equals("f07f7f0605f7"))
-            mTransport.rewind();
-      else if (data.equals("f07f7f0604f7"))
-            mTransport.fastForward();
-      else if (data.equals("f07f7f0601f7"))
-            mTransport.stop();
-      else if (data.equals("f07f7f0602f7"))
-            mTransport.play();
-      else if (data.equals("f07f7f0606f7"))
-            mTransport.record();
+//      // MMC Transport Controls:
+//      if (data.equals("f07f7f0605f7"))
+//            mTransport.rewind();
+//      else if (data.equals("f07f7f0604f7"))
+//            mTransport.fastForward();
+//      else if (data.equals("f07f7f0601f7"))
+//            mTransport.stop();
+//      else if (data.equals("f07f7f0602f7"))
+//            mTransport.play();
+//      else if (data.equals("f07f7f0606f7"))
+//            mTransport.record();
    }
 
    private Transport mTransport;

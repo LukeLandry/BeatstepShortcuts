@@ -12,8 +12,9 @@ public class Model {
     private ControllerHost host;
     private CursorTrack cursorTrack;
     private CursorDevice cursorDevice;
-    private PopupBrowser popupBrowser;
     private boolean shifted = false;
+    private boolean storing = false;
+    private int shortcutPage = 0;
 
     public static Model getInstance(ControllerHost host) {
         if (instance != null && host == instance.host) {
@@ -33,8 +34,9 @@ public class Model {
         this.host = host;
         cursorTrack = host.createCursorTrack(0, 0);
         cursorDevice = cursorTrack.createCursorDevice();
-        popupBrowser = host.createPopupBrowser();
-
+        cursorDevice.exists().markInterested();
+        cursorDevice.presetName().markInterested();
+        cursorDevice.presetCategory().markInterested();
     }
 
     public ControllerHost getHost() {
@@ -49,13 +51,27 @@ public class Model {
         return cursorDevice;
     }
 
-    public PopupBrowser getPopupBrowser() { return popupBrowser; }
-
     public boolean isShifted() {
         return shifted;
     }
 
     public void setShifted(boolean shifted) {
         this.shifted = shifted;
+    }
+
+    public boolean isStoring() {
+        return storing;
+    }
+
+    public void setStoring(boolean storing) {
+        this.storing = storing;
+    }
+
+    public int getShortcutPage() {
+        return shortcutPage;
+    }
+
+    public void setShortcutPage(int shortcutPage) {
+        this.shortcutPage = shortcutPage;
     }
 }

@@ -2,6 +2,8 @@ package com.honeyflamemusic;
 
 public class Controls {
 
+    public static final int STOP = 1;
+    public static final int PLAY = 2;
     public static final int SHIFT = 7;
 
     public static final int ENABLE = 8;
