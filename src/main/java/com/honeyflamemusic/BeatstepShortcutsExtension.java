@@ -4,13 +4,18 @@ import com.bitwig.extension.api.util.midi.ShortMidiMessage;
 import com.bitwig.extension.callback.ShortMidiMessageReceivedCallback;
 import com.bitwig.extension.controller.api.*;
 import com.bitwig.extension.controller.ControllerExtension;
+import com.honeyflamemusic.sysex.LightState;
+import com.honeyflamemusic.sysex.SysexMessages;
 
 import java.util.*;
+import java.util.stream.IntStream;
 
 public class BeatstepShortcutsExtension extends ControllerExtension
 {
 
    private Model model;
+   private Controls controls;
+   private SysexMessages sysexMessages;
    private KnobsController knobsController;
    private ShortcutPreferences shortcutPreferences;
    private int shortcutPage = 0;
@@ -19,6 +24,13 @@ public class BeatstepShortcutsExtension extends ControllerExtension
 
    private List<Shortcut> shortcutList = Collections.emptyList();
 
+   private CursorTrack mCursorTrack;
+   private CursorDevice mCursorDevice;
+   private CursorDeviceLayer mCursorDeviceLayer;
+   private DeviceBank mCursorDeviceBank;
+   private Application mApplication;
+   private MidiIn midiIn;
+   private MidiOut midiOut;
 
    protected BeatstepShortcutsExtension(final BeatstepShortcutsExtensionDefinition definition, final ControllerHost host)
    {
@@ -31,14 +43,29 @@ public class BeatstepShortcutsExtension extends ControllerExtension
       final ControllerHost host = getHost();
       model = Model.getInstance(host);
 
-      mTransport = host.createTransport();
-      host.getMidiInPort(0).setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
-      host.getMidiInPort(0).setSysexCallback((String data) -> onSysex0(data));
+      controls = new Controls(host);
+      sysexMessages = new SysexMessages(host);
 
-      host.getMidiOutPort(0).sendSysex("F0 00 20 6B 7F 42 02 00 01 5E 09 F7");
+      mTransport = host.createTransport();
+      midiIn = host.getMidiInPort(0);
+      midiOut = host.getMidiOutPort(0);
+
+      midiIn.setMidiCallback((ShortMidiMessageReceivedCallback)msg -> onMidi0(msg));
+      midiIn.setSysexCallback((String data) -> onSysex0(data));
+
+      sysexMessages.enableShiftButton();
 
       initializeShortcuts();
       initializeKnobs();
+      updatePageDisplay(0);
+
+      mApplication = host.createApplication();
+      mCursorTrack = host.createCursorTrack(0, 0);
+      mCursorDevice = mCursorTrack.createCursorDevice();
+      mCursorDeviceLayer = mCursorDevice.createCursorLayer();
+      mCursorDeviceLayer.exists().markInterested();
+      mCursorDeviceBank = mCursorDeviceLayer.createDeviceBank(1);
+
 
    }
 
@@ -47,8 +74,16 @@ public class BeatstepShortcutsExtension extends ControllerExtension
       setShortcutPage(0);
    }
 
+   private void updatePageDisplay(int pageNumber) {
+      getHost().println("Setting page to " + pageNumber);
+      IntStream.range(0, 8).boxed()
+              .forEach(i-> getHost().scheduleTask(()->sysexMessages.updatePadLight(i, i == pageNumber ? LightState.RED : LightState.OFF), 100*i));
+   }
+
    private void setShortcutPage(int pageNumber) {
-      if (pageNumber >= 0 && pageNumber < 16) {
+      getHost().println("Setting pageNumber from " + shortcutPage + " to " + pageNumber);
+      int oldPageNumber = shortcutPage;
+      if (pageNumber >= 0 && pageNumber < 8 && oldPageNumber != pageNumber) {
          shortcutPage = pageNumber;
          List<String> names = shortcutPreferences.getShortcutNamesForPage(shortcutPage);
          int ccNumber = 0;
@@ -60,6 +95,8 @@ public class BeatstepShortcutsExtension extends ControllerExtension
             ccNumber++;
          }
          getHost().showPopupNotification("Beatstep Shortcuts Page " + (shortcutPage + 1));
+         getHost().scheduleTask(()->sysexMessages.updatePadLight(shortcutPage, LightState.RED), 1000);
+         getHost().scheduleTask(()->sysexMessages.updatePadLight(oldPageNumber, LightState.OFF), 1500);
       }
 
    }
@@ -86,19 +123,27 @@ public class BeatstepShortcutsExtension extends ControllerExtension
    /** Called when we receive short MIDI message on port 0. */
    private void onMidi0(ShortMidiMessage msg) 
    {
-      if (msg.getData1() == Controls.SHIFT) {
-         if (msg.getStatusByte() == 0x90) {
-            Model.getInstance(getHost()).setShifted(true);
-         } else if (msg.getStatusByte() == 0x80) {
+      if (msg.isNoteOn() && msg.getData1() == Controls.SHIFT) {
+         Model.getInstance(getHost()).setShifted(true);
+      } else if (msg.isNoteOff() && msg.getData1() == Controls.SHIFT) {
             Model.getInstance(getHost()).setShifted(false);
-         }
       } else if (Model.getInstance(getHost()).isShifted()) {
-         if (msg.getStatusByte() == 0x92) {
+         if (msg.getStatusByte() == 0x82 && msg.getData1() < 8) {
             setShortcutPage(msg.getData1());
          }
-
       } else {
-         shortcutList.forEach(s -> s.onMidiMsg(msg));
+         if (msg.isNoteOn() && msg.getData1() != Controls.SHIFT) {
+            int note = msg.getData1();
+            if (note == Controls.ADD_INSTRUMENT_TRACK) {
+               mApplication.createInstrumentTrack(-1);
+            } else if (note == Controls.ADD_AUDIO_TRACK) {
+               mApplication.createAudioTrack(-1);
+            } else if (note == Controls.ADD_EFFECT_TRACK) {
+               mApplication.createEffectTrack(-1);
+            } else if (note < 8) {
+               shortcutList.forEach(s -> s.onMidiMsg(msg));
+            }
+         }
       }
 
    }

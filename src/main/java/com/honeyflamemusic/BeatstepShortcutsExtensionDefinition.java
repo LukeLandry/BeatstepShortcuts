@@ -17,13 +17,13 @@ public class BeatstepShortcutsExtensionDefinition extends ControllerExtensionDef
    @Override
    public String getName()
    {
-      return "BeatstepShortcuts";
+      return "Beatstep Shortcuts";
    }
    
    @Override
    public String getAuthor()
    {
-      return "SongWizard";
+      return "Honey Flame Music";
    }
 
    @Override
@@ -41,13 +41,13 @@ public class BeatstepShortcutsExtensionDefinition extends ControllerExtensionDef
    @Override
    public String getHardwareVendor()
    {
-      return "Honey Flame Music";
+      return "Arturia";
    }
    
    @Override
    public String getHardwareModel()
    {
-      return "BeatstepShortcuts";
+      return "Beatstep";
    }
 
    @Override
@@ -81,7 +81,7 @@ public class BeatstepShortcutsExtensionDefinition extends ControllerExtensionDef
       {
          // TODO: Set the correct names of the ports for auto detection on Windows platform here
          // and uncomment this when port names are correct.
-         // list.add(new String[]{"Input Port 0"}, new String[]{"Output Port 0"});
+         list.add(new String[]{"Arturia BeatStep"}, new String[]{"Arturia BeatStep"});
       }
       else if (platformType == PlatformType.LINUX)
       {

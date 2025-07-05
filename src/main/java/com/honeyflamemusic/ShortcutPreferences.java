@@ -20,9 +20,9 @@ public class ShortcutPreferences {
 
     public void initialize() {
 
-        for (int page = 0; page < 16; page++) {
+        for (int page = 0; page < 8; page++) {
             List<SettableStringValue> pageValues = new ArrayList<>();
-            for (int sc = 0; sc < 16; sc++) {
+            for (int sc = 0; sc < 8; sc++) {
                 pageValues.add(settings.getStringSetting("Shortcut Page " + page + " Item " + sc, "Shortcut Page " + page, 256, ""));
             }
             shortcutNames.add(pageValues);

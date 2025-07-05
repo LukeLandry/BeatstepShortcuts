@@ -14,7 +14,7 @@ public class KnobsController {
         this.host = host;
         midiIn = host.getMidiInPort(0);
         surface = host.createHardwareSurface();
-        projectRemotes = host.getProject().getRootTrackGroup().createCursorRemoteControlsPage(8);
+        projectRemotes = host.getProject().getRootTrackGroup().createCursorRemoteControlsPage("BS Project Remotes", 8, null);
         for (int i = 0; i < 8; i++) {
             final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("CC_PRJ_RMT_" + (i + 1));
             final RelativeHardwareValueMatcher matcher = midiIn.createRelative2sComplementValueMatcher(
@@ -25,7 +25,7 @@ public class KnobsController {
             knob.setStepSize(1);
             knob.setSensitivity(0.02);
         }
-        trackRemotes = host.createCursorTrack(0, 0).createCursorRemoteControlsPage(8);
+        trackRemotes = host.createCursorTrack(0, 0).createCursorRemoteControlsPage("BS Track Remotes", 8, null);
         for (int i = 0; i < 8; i++) {
             final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("CC_TRK_RMT_" + (i + 1));
             final RelativeHardwareValueMatcher matcher = midiIn.createRelative2sComplementValueMatcher(
@@ -36,6 +36,10 @@ public class KnobsController {
             knob.setStepSize(1);
             knob.setSensitivity(0.02);
         }
+
+        final RelativeHardwareKnob bigKnob = surface.createRelativeHardwareKnob("BIG_KNOB");
+        bigKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(3, 7, 64));
+        host.createTransport().getPosition().addBinding(bigKnob);
 
     }
 }
