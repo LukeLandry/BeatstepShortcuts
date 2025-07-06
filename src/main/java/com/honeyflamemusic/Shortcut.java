@@ -12,6 +12,7 @@ public class Shortcut {
     public static final String VST2_DEVICE = "VST2";
     public static final String CLAP_DEVICE = "CLAP";
     public static final String FILE = "FILE";
+    public static final String NULL_DEVICE = "NULL";
 
     private String deviceId;
     private String deviceType;
@@ -20,16 +21,22 @@ public class Shortcut {
     private CursorTrack cursorTrack;
     private ControllerHost host;
 
+    public Shortcut(ControllerHost host, SettableStringValue deviceId, int midiChannel, int noteNumber) {
+        this.host = host;
+        this.midiChannel = midiChannel;
+        this.noteNumber = noteNumber;
+        cursorTrack = host.createCursorTrack(0, 0);
 
-    public Shortcut(ControllerHost host, String deviceId, int midiChannel, int noteNumber) {
-        init(host, deviceId, midiChannel, noteNumber);
+        onDeviceChange(deviceId.get());
+        deviceId.addValueObserver(this::onDeviceChange);
     }
 
+    private void onDeviceChange(String deviceId) {
 
-    private void init(ControllerHost host, String deviceId, int midiChannel, int noteNumber) {
-        this.host = host;
-
-        if (deviceId.startsWith("VST2:")) {
+        if (deviceId == null || deviceId.trim().length() == 0) {
+            deviceType = NULL_DEVICE;
+            this.deviceId = "";
+        } else if (deviceId.startsWith("VST2:")) {
             this.deviceId = deviceId.substring(5).trim();
             deviceType = VST2_DEVICE;
         } else if (deviceId.startsWith("VST3:")) {
@@ -42,14 +49,16 @@ public class Shortcut {
             this.deviceId = deviceId.substring(5).trim();
             deviceType = CLAP_DEVICE;
         } else {
+            // remove unescaped single quotes
+            if (deviceId.startsWith("'")) {
+                deviceId = deviceId.substring(1);
+            }
+            if (deviceId.endsWith("'")) {
+                deviceId = deviceId.substring(0, deviceId.length() - 1);
+            }
             this.deviceId = deviceId;
             this.deviceType = FILE;
         }
-
-        this.midiChannel = midiChannel;
-        this.noteNumber = noteNumber;
-
-        cursorTrack = host.createCursorTrack(0, 0);
 
     }
 
@@ -74,29 +83,10 @@ public class Shortcut {
                     ip.insertFile(deviceId);
                     break;
                 default:
-                    throw new RuntimeException("Unexpected deviceType: " + deviceType);
             }
         }
     }
 
-//    private DeviceMatcher initializeDeviceMatcher() {
-//        switch (deviceType) {
-//            case BITWIG_DEVICE:
-//                return host.createBitwigDeviceMatcher(UUID.fromString(deviceId));
-//            case VST3_DEVICE:
-//                return host.createVST3DeviceMatcher(deviceId);
-//            case VST2_DEVICE:
-//                return host.createVST2DeviceMatcher(Integer.getInteger(deviceId));
-//            case FILE:
-//                return host.createActiveDeviceMatcher();
-//            default:
-//                throw new RuntimeException("Unexpected deviceType: " + deviceType);
-//        }
-//    }
-
-    public void flush() {
-        // shouldn't need this if observer works correctly
-    }
 
 
 }

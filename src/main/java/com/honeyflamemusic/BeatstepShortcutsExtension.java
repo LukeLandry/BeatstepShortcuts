@@ -18,11 +18,11 @@ public class BeatstepShortcutsExtension extends ControllerExtension
    private SysexMessages sysexMessages;
    private KnobsController knobsController;
    private ShortcutPreferences shortcutPreferences;
-   private int shortcutPage = 0;
+   private int shortcutPageNumber = -1;
 
    private final UUID eqPlusId = UUID.fromString("e4815188-ba6f-4d14-bcfc-2dcb8f778ccb");
 
-   private List<Shortcut> shortcutList = Collections.emptyList();
+   private List<ShortcutPage> shortcutPages = new ArrayList<>();
 
    private CursorTrack mCursorTrack;
    private CursorDevice mCursorDevice;
@@ -69,10 +69,26 @@ public class BeatstepShortcutsExtension extends ControllerExtension
 
    }
 
+
    private void initializeShortcuts() {
       shortcutPreferences = new ShortcutPreferences(getHost());
+
+      for (int shortcutPage = 0; shortcutPage < 8; shortcutPage++) {
+         List<SettableStringValue> deviceIds = shortcutPreferences.getShortcutIds(shortcutPage);
+         SettableStringValue pageName = shortcutPreferences.getShortcutPageName(shortcutPage);
+         int ccNumber = 0;
+         List<Shortcut> shortcutList = new ArrayList<>();
+         for (SettableStringValue deviceId : deviceIds) {
+            shortcutList.add(new Shortcut(getHost(), deviceId, 2, ccNumber));
+            ccNumber++;
+         }
+         ShortcutPage sp = new ShortcutPage(shortcutList, pageName);
+         shortcutPages.add(sp);
+      }
+
       setShortcutPage(0);
    }
+
 
    private void updatePageDisplay(int pageNumber) {
       getHost().println("Setting page to " + pageNumber);
@@ -81,21 +97,13 @@ public class BeatstepShortcutsExtension extends ControllerExtension
    }
 
    private void setShortcutPage(int pageNumber) {
-      getHost().println("Setting pageNumber from " + shortcutPage + " to " + pageNumber);
-      int oldPageNumber = shortcutPage;
+      getHost().println("pagenumber = " + pageNumber);
+      int oldPageNumber = shortcutPageNumber;
+      shortcutPageNumber = pageNumber;
+      String shortcutPageName = shortcutPages.get(shortcutPageNumber).getPageName();
       if (pageNumber >= 0 && pageNumber < 8 && oldPageNumber != pageNumber) {
-         shortcutPage = pageNumber;
-         List<String> names = shortcutPreferences.getShortcutNamesForPage(shortcutPage);
-         int ccNumber = 0;
-         shortcutList = new ArrayList<>();
-         for (String name : names) {
-            if (name != null && !name.isEmpty()) {
-               shortcutList.add(new Shortcut(getHost(), name, 2, ccNumber));
-            }
-            ccNumber++;
-         }
-         getHost().showPopupNotification("Beatstep Shortcuts Page " + (shortcutPage + 1));
-         getHost().scheduleTask(()->sysexMessages.updatePadLight(shortcutPage, LightState.RED), 1000);
+         getHost().showPopupNotification("Beatstep Shortcuts Page " + (shortcutPageNumber + 1) + " " + shortcutPageName);
+         getHost().scheduleTask(()->sysexMessages.updatePadLight(shortcutPageNumber, LightState.RED), 1000);
          getHost().scheduleTask(()->sysexMessages.updatePadLight(oldPageNumber, LightState.OFF), 1500);
       }
 
@@ -110,13 +118,12 @@ public class BeatstepShortcutsExtension extends ControllerExtension
    {
       // TODO: Perform any cleanup once the driver exits
       // For now just show a popup notification for verification that it is no longer running.
-      getHost().showPopupNotification("BeatstepShortcuts Exited");
+      //getHost().showPopupNotification("BeatstepShortcuts Exited");
    }
 
    @Override
    public void flush()
    {
-      shortcutList.forEach(Shortcut::flush);
 
    }
 
@@ -141,7 +148,8 @@ public class BeatstepShortcutsExtension extends ControllerExtension
             } else if (note == Controls.ADD_EFFECT_TRACK) {
                mApplication.createEffectTrack(-1);
             } else if (note < 8) {
-               shortcutList.forEach(s -> s.onMidiMsg(msg));
+               getHost().println("Adding shortcut #" + note);
+               shortcutPages.get(shortcutPageNumber).get().forEach(s -> s.onMidiMsg(msg));
             }
          }
       }
