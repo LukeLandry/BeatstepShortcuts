@@ -147,6 +147,14 @@ public class BeatstepShortcutsExtension extends ControllerExtension
                mApplication.createAudioTrack(-1);
             } else if (note == Controls.ADD_EFFECT_TRACK) {
                mApplication.createEffectTrack(-1);
+            } else if (note == Controls.WINDOW_STATE) {
+               mCursorDevice.isWindowOpen().toggle();
+            } else if (note == Controls.ENABLE) {
+               mCursorDevice.isEnabled().toggle();
+            } else if (note == Controls.DELETE_DEVICE) {
+               mCursorDevice.deleteObject();
+            } else if (note == Controls.UNDO) {
+               mApplication.undo();
             } else if (note < 8) {
                getHost().println("Adding shortcut #" + note);
                shortcutPages.get(shortcutPageNumber).get().forEach(s -> s.onMidiMsg(msg));

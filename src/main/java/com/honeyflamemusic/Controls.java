@@ -15,6 +15,10 @@ public class Controls {
     public static final int ADD_INSTRUMENT_TRACK = 8;
     public static final int ADD_AUDIO_TRACK = 9;
     public static final int ADD_EFFECT_TRACK = 10;
+    public static final int WINDOW_STATE = 11;
+    public static final int ENABLE = 12;
+    public static final int DELETE_DEVICE = 13;
+    public static final int UNDO = 15;
 
     public static final int BIG_KNOB = 40;
 
