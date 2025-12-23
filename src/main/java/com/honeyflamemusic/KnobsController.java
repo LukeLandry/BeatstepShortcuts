@@ -17,8 +17,7 @@ public class KnobsController {
         projectRemotes = host.getProject().getRootTrackGroup().createCursorRemoteControlsPage("BS Project Remotes", 8, null);
         for (int i = 0; i < 8; i++) {
             final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("CC_PRJ_RMT_" + (i + 1));
-            final RelativeHardwareValueMatcher matcher = midiIn.createRelative2sComplementValueMatcher(
-                    String.format("(status == 178 && data1 == %d )", (20 + i)), "data2-64", 8, 1);
+            final RelativeHardwareValueMatcher matcher = midiIn.createRelativeBinOffsetCCValueMatcher(2, (20 + i), 1);
             knob.setAdjustValueMatcher(matcher);
             final RemoteControl param = projectRemotes.getParameter(i);
             param.addBinding(knob);
@@ -28,8 +27,9 @@ public class KnobsController {
         trackRemotes = host.createCursorTrack(0, 0).createCursorRemoteControlsPage("BS Track Remotes", 8, null);
         for (int i = 0; i < 8; i++) {
             final RelativeHardwareKnob knob = surface.createRelativeHardwareKnob("CC_TRK_RMT_" + (i + 1));
-            final RelativeHardwareValueMatcher matcher = midiIn.createRelative2sComplementValueMatcher(
-                    String.format("(status == 178 && data1 == %d )", (30 + i)), "data2-64", 8, 1);
+            final RelativeHardwareValueMatcher matcher = midiIn.createRelativeBinOffsetCCValueMatcher(2, (30 + i), 1);
+//            final RelativeHardwareValueMatcher matcher = midiIn.createRelative2sComplementValueMatcher(
+//                    String.format("(status == 178 && data1 == %d )", (30 + i)), "data2-64", 8, 1);
             knob.setAdjustValueMatcher(matcher);
             final RemoteControl param = trackRemotes.getParameter(i);
             param.addBinding(knob);
@@ -38,7 +38,7 @@ public class KnobsController {
         }
 
         final RelativeHardwareKnob bigKnob = surface.createRelativeHardwareKnob("BIG_KNOB");
-        bigKnob.setAdjustValueMatcher(midiIn.createRelative2sComplementCCValueMatcher(3, 7, 64));
+        bigKnob.setAdjustValueMatcher(midiIn.createRelativeBinOffsetCCValueMatcher(2, 7, 1));
         host.createTransport().getPosition().addBinding(bigKnob);
 
     }
