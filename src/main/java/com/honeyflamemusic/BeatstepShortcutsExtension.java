@@ -155,6 +155,8 @@ public class BeatstepShortcutsExtension extends ControllerExtension
                mCursorDevice.deleteObject();
             } else if (note == Controls.UNDO) {
                mApplication.undo();
+            } else if (note == Controls.TAP_TEMPO) {
+               mTransport.tapTempo();
             } else if (note < 8) {
                getHost().println("Adding shortcut #" + note);
                shortcutPages.get(shortcutPageNumber).get().forEach(s -> s.onMidiMsg(msg));

@@ -18,7 +18,8 @@ public class Controls {
     public static final int WINDOW_STATE = 11;
     public static final int ENABLE = 12;
     public static final int DELETE_DEVICE = 13;
-    public static final int UNDO = 15;
+    public static final int UNDO = 14;
+    public static final int TAP_TEMPO = 15;
 
     public static final int BIG_KNOB = 40;
 
